@@ -41,9 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Inloggen - Het Utrechts Archief</title>
     <link rel="stylesheet" href="style.css" />
-        <style>
-      @media (min-width:901px){ main .login-wrapper{ min-height:calc(100vh - 280px); display:flex; align-items:center; } }
-        </style>
 </head>
 <body>
     <h1 class="page-title">Inloggen</h1>

@@ -17,7 +17,6 @@ if ($action === 'save_order') {
       $img = $row['img'] ?? '';
       $pos = (int)($row['position'] ?? 0);
       if (!$img || !$pos) continue;
-      // Use explicit value for update to avoid deprecated VALUES() usage
       $stmt = $conn->prepare('INSERT INTO panorama_order (img, position) VALUES (?, ?) ON DUPLICATE KEY UPDATE position=?');
       $stmt->bind_param('sii', $img, $pos, $pos);
       $stmt->execute();
@@ -44,7 +43,6 @@ if ($action === 'save_hotspot') {
   $hasY = array_key_exists('y_coord', $payload);
 
   if ($hasX && $hasY) {
-    // Full update with coordinates (used by drag/save in admin mode on panorama)
     $naam = $payload['naam'] ?? '';
     $beschrijving = $payload['beschrijving'] ?? '';
     $x = (float)$payload['x_coord'];
@@ -57,7 +55,6 @@ if ($action === 'save_hotspot') {
   }
 
   if ($hasNaam || $hasBeschrijving) {
-    // Partial update (no coords): do not touch x/y
     if ($hasNaam && $hasBeschrijving) {
       $naam = $payload['naam'];
       $beschrijving = $payload['beschrijving'];
@@ -79,6 +76,65 @@ if ($action === 'save_hotspot') {
 
   http_response_code(400);
   echo json_encode(['error'=>'no_fields_to_update']);
+  exit;
+}
+
+if ($action === 'create_hotspot') {
+  $payload = json_decode(file_get_contents('php://input'), true) ?? [];
+  $naam = trim($payload['naam'] ?? '');
+  $beschrijving = trim($payload['beschrijving'] ?? '');
+  $beschrijving_en = trim($payload['beschrijving_english'] ?? '');
+  $x = isset($payload['x_coord']) ? (float)$payload['x_coord'] : 0.0;
+  $y = isset($payload['y_coord']) ? (float)$payload['y_coord'] : 0.0;
+  if ($naam === '') { http_response_code(400); echo json_encode(['error'=>'missing_name']); exit; }
+  $stmt = $conn->prepare('INSERT INTO hotspots (naam, beschrijving, beschrijving_english, x_coord, y_coord) VALUES (?, ?, ?, ?, ?)');
+  $stmt->bind_param('sssdd', $naam, $beschrijving, $beschrijving_en, $x, $y);
+  $ok = $stmt->execute();
+  $id = $ok ? $stmt->insert_id : 0;
+  $stmt->close();
+  echo json_encode(['status'=>$ok ? 'ok' : 'err', 'id'=>$id]);
+  exit;
+}
+
+if ($action === 'add_image') {
+  $payload = json_decode(file_get_contents('php://input'), true) ?? [];
+  $img = trim($payload['img'] ?? '');
+  $position = isset($payload['position']) ? (int)$payload['position'] : 0;
+  if ($img === '') { http_response_code(400); echo json_encode(['error'=>'missing_img']); exit; }
+  if ($position <= 0) {
+    $res = $conn->query('SELECT COALESCE(MAX(position),0) AS maxp FROM panorama_order');
+    $row = $res ? $res->fetch_assoc() : ['maxp'=>0];
+    $position = ((int)$row['maxp']) + 1;
+  }
+  $stmt = $conn->prepare('INSERT INTO panorama_order (img, position) VALUES (?, ?) ON DUPLICATE KEY UPDATE position=?');
+  $stmt->bind_param('sii', $img, $position, $position);
+  $ok = $stmt->execute();
+  $stmt->close();
+  echo json_encode(['status'=>$ok ? 'ok' : 'err', 'img'=>$img, 'position'=>$position]);
+  exit;
+}
+
+if ($action === 'delete_image') {
+  $payload = json_decode(file_get_contents('php://input'), true) ?? [];
+  $img = trim($payload['img'] ?? '');
+  if ($img === '') { http_response_code(400); echo json_encode(['error'=>'missing_img']); exit; }
+  $stmt = $conn->prepare('DELETE FROM panorama_order WHERE img = ?');
+  $stmt->bind_param('s', $img);
+  $ok = $stmt->execute();
+  $stmt->close();
+  echo json_encode(['status'=>$ok ? 'ok' : 'err']);
+  exit;
+}
+
+if ($action === 'delete_hotspot') {
+  $payload = json_decode(file_get_contents('php://input'), true) ?? [];
+  $id = (int)($payload['id'] ?? 0);
+  if ($id <= 0) { http_response_code(400); echo json_encode(['error'=>'missing_id']); exit; }
+  $stmt = $conn->prepare('DELETE FROM hotspots WHERE id = ?');
+  $stmt->bind_param('i', $id);
+  $ok = $stmt->execute();
+  $stmt->close();
+  echo json_encode(['status'=>$ok ? 'ok' : 'err']);
   exit;
 }
 

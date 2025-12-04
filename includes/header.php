@@ -1,14 +1,12 @@
 <?php if (session_status() === PHP_SESSION_NONE) session_start(); ?>
 <?php
-// Simple language toggle via query param, persisted in session
-// Usage: append ?lang=nl or ?lang=en to any URL
+
 if (isset($_GET['lang'])) {
     $lang = strtolower($_GET['lang']) === 'en' ? 'en' : 'nl';
     $_SESSION['lang'] = $lang;
 }
 $lang = $_SESSION['lang'] ?? 'nl';
 
-// Labels per language (minimal demo)
 $L = [
     'nl' => [
         'discover' => 'Ontdekken',
@@ -38,12 +36,10 @@ $L = [
     ]
 ][$lang];
 
-// Build current URL without existing lang param, then append desired one
 function currentUrlNoLang(): string {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $path = $_SERVER['REQUEST_URI'] ?? '/';
-    // Strip existing lang= from query
     $parts = parse_url($path);
     $query = [];
     if (!empty($parts['query'])) {

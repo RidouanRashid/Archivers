@@ -14,7 +14,6 @@
     <h1 class="page-title"><?php echo $lang === 'en' ? 'Welcome to Utrecht Archives' : 'Welkom bij Het Utrechts Archief'; ?></h1>
     <main>
         <?php
-        // Fetch panorama order from DB; fallback to default 1..33
         $images = [];
         $host = '127.0.0.1';
         $user = 'root';
@@ -48,11 +47,9 @@
             <?php foreach ($images as $idx => $src): ?>
                 <img src="<?php echo htmlspecialchars($src); ?>" alt="Panorama Image <?php echo $idx+1; ?>">
             <?php endforeach; ?>
-            <!-- Hotspots overlay inside panorama to follow scaling -->
             <div class="hotspots-layer" aria-label="Hotspots"></div>
         </div>
         </div>
-        <!-- Minimap under the panorama -->
         <div class="minimap" aria-label="Panorama minimap">
             <div class="minimap-track">
                 <?php foreach ($images as $idx => $src): ?>

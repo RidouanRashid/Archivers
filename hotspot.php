@@ -1,5 +1,4 @@
 <?php
-// Hotspot detail page: opens when clicking a marker
 $host = '127.0.0.1';
 $user = 'root'; // adjust
 $pass = '';
@@ -14,7 +13,7 @@ if ($conn->connect_error) {
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $hotspot = null;
 if ($id > 0) {
-    $stmt = $conn->prepare('SELECT id, naam, beschrijving, beschrijving_en, x_coord, y_coord FROM hotspots WHERE id = ?');
+    $stmt = $conn->prepare('SELECT id, naam, beschrijving, beschrijving_english AS beschrijving_en, x_coord, y_coord FROM hotspots WHERE id = ?');
     $stmt->bind_param('i', $id);
     $stmt->execute();
     $res = $stmt->get_result();

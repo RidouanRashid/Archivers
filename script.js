@@ -337,12 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     const out = await res.json();
     alert(out.status || 'Opgeslagen');
-    // Redirect to panorama to immediately view the new order
     if (out.status === 'ok') {
       window.location.href = 'index.php';
     }
   });
-  // Arrow click handlers: move items left/right and optionally auto-save
   function moveItem(buttonEl, dir) {
     if (!buttonEl) return;
     const item = buttonEl.closest('.reorder-item');
@@ -364,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => moveItem(btn, 'right'));
   });
 
-  // Optional: auto-save after arrow movement (comment out if not desired)
   async function saveCurrentOrder() {
     const payload = Array.from(list.children).map((el, i) => ({ img: el.dataset.img, position: i+1 }));
     const res = await fetch('admin_api.php?action=save_order', {
@@ -378,12 +375,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Toggle dragging instructions link to panorama page (button kept for parity)
   document.getElementById('toggleDrag').addEventListener('click', () => {
     window.location.href = 'index.php?admin=1';
   });
 
-  // Save hotspot description inline in admin panel
   document.querySelectorAll('.saveHotspot').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = parseInt(btn.dataset.id, 10);
@@ -391,9 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const beschrijving = textarea ? textarea.value : '';
       const xInput = document.querySelector('input.coord-x[data-id="' + id + '"]');
       const yInput = document.querySelector('input.coord-y[data-id="' + id + '"]');
+			const naamInput = document.querySelector('input.hs-naam[data-id="' + id + '"]');
+			const naam = naamInput ? naamInput.value : undefined;
       const x = xInput ? parseFloat(xInput.value) : undefined;
       const y = yInput ? parseFloat(yInput.value) : undefined;
-      const payload = { id, beschrijving };
+			const payload = { id, beschrijving };
+			if (typeof naam === 'string') payload.naam = naam;
       if (!Number.isNaN(x) && !Number.isNaN(y)) { payload.x_coord = x; payload.y_coord = y; }
       const res = await fetch('admin_api.php?action=save_hotspot', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -403,3 +401,30 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(out.status === 'ok' ? 'Hotspot opgeslagen' : 'Opslaan mislukt');
     });
   });
+	list.addEventListener('click', async (e) => {
+		const btn = e.target.closest('.delete-image');
+		if (btn) {
+			const item = btn.closest('.reorder-item');
+			const img = item?.dataset.img;
+			if (!img) return;
+			if (!confirm('Verwijder deze afbeelding uit het panorama?')) return;
+			const res = await fetch('admin_api.php?action=delete_image', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ img }) });
+			const out = await res.json();
+			if (out.status === 'ok') { item.remove(); }
+			else alert('Verwijderen mislukt.');
+		}
+	});
+
+	document.querySelectorAll('.deleteHotspot').forEach(btn => {
+		btn.addEventListener('click', async () => {
+			const id = parseInt(btn.dataset.id, 10);
+			if (!id) return;
+			if (!confirm('Hotspot verwijderen?')) return;
+			const res = await fetch('admin_api.php?action=delete_hotspot', {
+				method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id })
+			});
+			const out = await res.json();
+			if (out.status === 'ok') { btn.closest('.admin-card')?.remove(); }
+			else alert('Verwijderen mislukt.');
+		});
+	});
