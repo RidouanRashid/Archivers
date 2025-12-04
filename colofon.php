@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
     <h1 class="page-title">Colofon</h1>
 
     <main>
@@ -42,7 +42,7 @@
             </div>
         </section>
     </main>
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
     <script src="script.js"></script>
 </body>
 </html>

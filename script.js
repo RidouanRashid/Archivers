@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 	const viewport = document.querySelector('.panorama-viewport');
 	const content = document.querySelector('.panorama-viewport .panorama');
+	const hotspotsLayer = content ? content.querySelector('.hotspots-layer') : null;
 	const btnIn = document.querySelector('.panorama-toolbar .zoom-in');
 	const btnOut = document.querySelector('.panorama-toolbar .zoom-out');
 	const btnReset = document.querySelector('.panorama-toolbar .zoom-reset');
@@ -32,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		viewport.scrollTop = contentY * scale - y;
 	}
 
-	// Wheel: only zoom when Ctrl is held (or pinch gesture)
 	viewport.addEventListener('wheel', (e) => {
 		if (e.ctrlKey) {
 			e.preventDefault();
@@ -40,10 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			const factor = Math.exp(-e.deltaY * zoomIntensity);
 			zoomAt(e.clientX, e.clientY, scale * factor);
 		}
-		// otherwise, let native scrolling happen
 	}, { passive: false });
 
-	// Drag to pan by scrolling (optional, smooth)
 	let isPanning = false;
 	let startX = 0, startY = 0, startSL = 0, startST = 0;
 	viewport.addEventListener('mousedown', (e) => {
@@ -67,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		viewport.classList.remove('grabbing');
 	});
 
-	// Touch: use native one-finger scroll; implement pinch to zoom
 	let touchMode = 'none';
 	let startDist = 0;
 	let startScale = 1;
@@ -95,8 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				contentX: (viewport.scrollLeft + x) / scale,
 				contentY: (viewport.scrollTop + y) / scale,
 			};
-		} else {
-			touchMode = 'none';
 		}
 	}, { passive: true });
 
@@ -105,21 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			e.preventDefault();
 			const dist = distance(e.touches[0], e.touches[1]);
 			const factor = dist / startDist;
-			let nextScale = clamp(startScale * factor, minScale, maxScale);
-			scale = nextScale;
+			scale = clamp(startScale * factor, minScale, maxScale);
 			applyTransform();
 			viewport.scrollLeft = midStart.contentX * scale - midStart.x;
 			viewport.scrollTop = midStart.contentY * scale - midStart.y;
 		}
 	}, { passive: false });
 
-	viewport.addEventListener('touchend', () => {
-		if (touchMode === 'pinch') {
-			touchMode = 'none';
-		}
-	});
+	viewport.addEventListener('touchend', () => { touchMode = 'none'; });
 
-	// Buttons
 	function stepZoom(factor) {
 		const rect = viewport.getBoundingClientRect();
 		const cx = rect.left + rect.width / 2;
@@ -132,24 +121,143 @@ document.addEventListener('DOMContentLoaded', () => {
 	btnReset && btnReset.addEventListener('click', () => {
 		scale = 1;
 		applyTransform();
-		// keep scroll within bounds
 		viewport.scrollLeft = 0;
 		viewport.scrollTop = 0;
 	});
 
-	// Initial state
 	applyTransform();
 
-	// Minimap click-to-jump
-	const minimap = document.querySelector('.minimap');
+	(async function loadHotspots(){
+		if (!hotspotsLayer) return;
+		try {
+			const res = await fetch('hotspots.php');
+			const data = await res.json();
+			const items = (data && data.hotspots) ? data.hotspots : [];
+			// Measure image slice positions (left offsets and widths)
+			const imgs = Array.from(content.querySelectorAll('img'));
+			const slices = imgs.map(img => ({ left: img.offsetLeft, width: img.clientWidth }));
+			const contentWidth = content.scrollWidth || slices.reduce((s, x) => s + x.width, 0);
+			hotspotsLayer.style.width = contentWidth + 'px';
+
+			function coordToPercentX(x) {
+				let px = Number(x);
+				if (!isFinite(px)) px = 0;
+				if (px <= 100) {
+					return Math.max(0, Math.min(100, px));
+				} else {
+					const pct = (px / contentWidth) * 100;
+					return Math.max(0, Math.min(100, pct));
+				}
+			}
+			function coordToPercentY(y) {
+				// Percent [0..100] or pixels
+				let px = Number(y);
+				const h = content.clientHeight || 500;
+				if (!isFinite(px)) px = 0;
+				if (px <= 100) return Math.max(0, Math.min(100, px));
+				return Math.max(0, Math.min(100, (px / h) * 100));
+			}
+
+			items.forEach(h => {
+				const xPct = coordToPercentX(h.x_coord);
+				const yPct = coordToPercentY(h.y_coord);
+				const xPx = (xPct / 100) * contentWidth;
+				let sliceIndex = 0;
+				for (let i = 0; i < slices.length; i++) {
+					const s = slices[i];
+					if (xPx >= s.left && xPx < s.left + s.width) { sliceIndex = i + 1; break; }
+				}
+				const node = document.createElement('div');
+				node.className = 'hotspot';
+				node.style.left = xPx + 'px';
+				const yPx = (yPct / 100) * (content.clientHeight || 500);
+				node.style.top = yPx + 'px';
+				node.dataset.slice = String(sliceIndex);
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.textContent = h.naam || ('Hotspot ' + (h.id ?? ''));
+				btn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const existing = node.querySelector('.popup');
+					if (existing) { existing.remove(); return; }
+					const pop = document.createElement('div');
+					pop.className = 'popup';
+					const close = document.createElement('button');
+					close.className = 'close'; close.innerHTML = '&times;';
+					close.addEventListener('click', () => pop.remove());
+					const title = document.createElement('h4');
+					title.textContent = h.naam || 'Hotspot';
+					const adminMode = content.classList.contains('admin');
+					let desc;
+					if (adminMode) {
+						desc = document.createElement('textarea');
+						desc.style.width = '100%';
+						desc.rows = 4;
+						desc.value = h.beschrijving || '';
+						const save = document.createElement('button');
+						save.textContent = 'Opslaan';
+						save.className = 'mode';
+						save.style.marginTop = '6px';
+						save.addEventListener('click', async () => {
+							await fetch('admin_api.php?action=save_hotspot', {
+								method: 'POST', headers: {'Content-Type':'application/json'},
+								body: JSON.stringify({ id: h.id, naam: h.naam, beschrijving: desc.value, x_coord: (parseFloat(node.style.left)||0), y_coord: (parseFloat(node.style.top)||0) })
+							});
+							pop.remove();
+						});
+						pop.appendChild(save);
+					} else {
+						desc = document.createElement('p');
+						desc.textContent = h.beschrijving || '';
+					}
+					const meta = document.createElement('div');
+					meta.className = 'meta';
+					meta.textContent = 'Afbeelding ' + sliceIndex;
+					pop.appendChild(close);
+					pop.appendChild(title);
+					pop.appendChild(desc);
+					pop.appendChild(meta);
+					node.appendChild(pop);
+				});
+				node.appendChild(btn);
+				hotspotsLayer.appendChild(node);
+
+				if (content.classList.contains('admin')) {
+					let dragging = false; let sx=0, sy=0, sl=0, st=0;
+					node.addEventListener('mousedown', (ev) => {
+						if (ev.target.tagName.toLowerCase() === 'textarea') return;
+						dragging = true; node.classList.add('dragging');
+						sx = ev.clientX; sy = ev.clientY;
+						sl = parseFloat(node.style.left)||0; st = parseFloat(node.style.top)||0;
+						ev.preventDefault();
+					});
+					window.addEventListener('mousemove', (ev) => {
+						if (!dragging) return;
+						const dx = (ev.clientX - sx); const dy = (ev.clientY - sy);
+						node.style.left = (sl + dx) + 'px';
+						node.style.top = (st + dy) + 'px';
+					});
+					window.addEventListener('mouseup', async () => {
+						if (!dragging) return; dragging = false; node.classList.remove('dragging');
+						await fetch('admin_api.php?action=save_hotspot', {
+							method: 'POST', headers: {'Content-Type':'application/json'},
+							body: JSON.stringify({ id: h.id, naam: h.naam, beschrijving: h.beschrijving, x_coord: parseFloat(node.style.left)||0, y_coord: parseFloat(node.style.top)||0 })
+						});
+					});
+				}
+			});
+		} catch (e) {
+			console.warn('Failed to load hotspots:', e);
+		}
+	})();
+
+	
 	const track = document.querySelector('.minimap-track');
 	const miniImgs = track ? Array.from(track.querySelectorAll('img')) : [];
 
-	// Compute minimap thumbnail height so all images fit within page width
 	function layoutMinimap() {
 		if (!track || miniImgs.length === 0) return;
-		const containerWidth = track.clientWidth || (minimap ? minimap.clientWidth : window.innerWidth);
-		// Ensure natural sizes are available
+		const containerWidth = track.clientWidth || window.innerWidth;
 		const aspects = miniImgs.map(img => {
 			const nw = img.naturalWidth || img.width;
 			const nh = img.naturalHeight || img.height || 1;
@@ -160,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		miniImgs.forEach(img => { img.style.height = targetHeight + 'px'; });
 	}
 
-	// Run after images load and on resize
 	if (miniImgs.length) {
 		let remaining = miniImgs.length;
 		miniImgs.forEach(img => {
@@ -173,13 +280,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 		window.addEventListener('resize', () => layoutMinimap());
 	}
-
-	// Click on minimap to jump
 	if (track) {
 		track.addEventListener('click', (e) => {
 			const rect = track.getBoundingClientRect();
 			const x = e.clientX - rect.left;
-			const proportion = x / rect.width; // 0..1 along minimap
+			const proportion = x / rect.width;
 			const contentWidth = content.scrollWidth * scale;
 			const maxScroll = Math.max(0, contentWidth - viewport.clientWidth);
 			viewport.scrollLeft = proportion * maxScroll;
@@ -187,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 });
 
-// Header logo swap on scroll: large at very top, small once user scrolls down
 (function setupHeaderLogoSwap(){
 	const logoImg = document.getElementById('huaLogo');
 	if (!logoImg) return;
@@ -196,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function update() {
 		const atTop = (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
-		// Swap source only if different to avoid flicker
 		const target = atTop ? largeSrc : smallSrc;
 		if (logoImg.src !== new URL(target, window.location.href).href) {
 			logoImg.src = target;
@@ -207,3 +310,96 @@ document.addEventListener('DOMContentLoaded', () => {
 	window.addEventListener('load', update);
 	update();
 })();
+
+  // Drag and drop ordering UI
+  const list = document.getElementById('reorderList');
+  let dragEl = null;
+  list.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('reorder-item')) {
+      dragEl = e.target;
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  });
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const after = Array.from(list.children).find(ch => {
+      const box = ch.getBoundingClientRect();
+      return e.clientX < box.left + box.width/2;
+    });
+    if (after) list.insertBefore(dragEl, after); else list.appendChild(dragEl);
+  });
+  list.addEventListener('dragend', () => { dragEl = null; });
+
+  document.getElementById('saveOrder').addEventListener('click', async () => {
+    const payload = Array.from(list.children).map((el, i) => ({ img: el.dataset.img, position: i+1 }));
+    const res = await fetch('admin_api.php?action=save_order', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const out = await res.json();
+    alert(out.status || 'Opgeslagen');
+    // Redirect to panorama to immediately view the new order
+    if (out.status === 'ok') {
+      window.location.href = 'index.php';
+    }
+  });
+  // Arrow click handlers: move items left/right and optionally auto-save
+  function moveItem(buttonEl, dir) {
+    if (!buttonEl) return;
+    const item = buttonEl.closest('.reorder-item');
+    if (!item) return;
+    const parent = item.parentElement;
+    if (dir === 'left') {
+      const prev = item.previousElementSibling;
+      if (prev) parent.insertBefore(item, prev);
+    } else if (dir === 'right') {
+      const next = item.nextElementSibling;
+      if (next) parent.insertBefore(next, item);
+    }
+  }
+
+  list.querySelectorAll('.arrow-left').forEach(btn => {
+    btn.addEventListener('click', () => moveItem(btn, 'left'));
+  });
+  list.querySelectorAll('.arrow-right').forEach(btn => {
+    btn.addEventListener('click', () => moveItem(btn, 'right'));
+  });
+
+  // Optional: auto-save after arrow movement (comment out if not desired)
+  async function saveCurrentOrder() {
+    const payload = Array.from(list.children).map((el, i) => ({ img: el.dataset.img, position: i+1 }));
+    const res = await fetch('admin_api.php?action=save_order', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    try { await res.json(); } catch {}
+  }
+  list.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('arrow-left') || e.target.classList.contains('arrow-right')) {
+      await saveCurrentOrder();
+    }
+  });
+
+  // Toggle dragging instructions link to panorama page (button kept for parity)
+  document.getElementById('toggleDrag').addEventListener('click', () => {
+    window.location.href = 'index.php?admin=1';
+  });
+
+  // Save hotspot description inline in admin panel
+  document.querySelectorAll('.saveHotspot').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const textarea = document.querySelector('textarea[data-id="' + id + '"]');
+      const beschrijving = textarea ? textarea.value : '';
+      const xInput = document.querySelector('input.coord-x[data-id="' + id + '"]');
+      const yInput = document.querySelector('input.coord-y[data-id="' + id + '"]');
+      const x = xInput ? parseFloat(xInput.value) : undefined;
+      const y = yInput ? parseFloat(yInput.value) : undefined;
+      const payload = { id, beschrijving };
+      if (!Number.isNaN(x) && !Number.isNaN(y)) { payload.x_coord = x; payload.y_coord = y; }
+      const res = await fetch('admin_api.php?action=save_hotspot', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const out = await res.json();
+      alert(out.status === 'ok' ? 'Hotspot opgeslagen' : 'Opslaan mislukt');
+    });
+  });
