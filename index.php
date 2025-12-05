@@ -1,17 +1,33 @@
 <!DOCTYPE html>
+<!-- Panorama pagina: hoofd interactieve interface
+  - Zoom/pan: muis scroll, drag, trackpad Ctrl+scroll, touch 2-finger pinch
+  - Minimap: navigatie en positie-feedback
+  - Hotspots: interactief met popups
+  - Admin mode: ingeschakeld via ?admin parameter
+  - Laadt afbeeldingen/hotspots uit database
+-->
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Leporello Panorama</title>
     <link rel="stylesheet" href="style.css" />
  </head>
  <body>
+ <?php
+ // Standaard: toon tutorial content zonder header/footer op de homepage
+ // Override: voeg ?view=panorama toe om de normale index te tonen
+ if (!isset($_GET['view']) || $_GET['view'] !== 'panorama') {
+     include 'includes/tutorial_content.php';
+     echo '<script src="script.js"></script>';
+     echo '</body></html>';
+     return;
+ }
+ ?>
  <?php include 'includes/header.php'; ?>
 
     <?php if (session_status() === PHP_SESSION_NONE) session_start(); $lang = $_SESSION['lang'] ?? 'nl'; ?>
-    <h1 class="page-title"><?php echo $lang === 'en' ? 'Welcome to Utrecht Archives' : 'Welkom bij Het Utrechts Archief'; ?></h1>
     <main>
         <?php
         $images = [];

@@ -1,4 +1,9 @@
 <?php
+// Hotspot detail pagina: toont informatie van één hotspot
+// - Query parameter: ?id=123 (hotspot ID)
+// - Haalt hotspot uit database met volle details
+// - Wissel beschrijving naar Engels als sessie taal 'en' is
+// - Toont naam, beschrijving (taalafhankelijk), en coördinaten
 $host = '127.0.0.1';
 $user = 'root'; // adjust
 $pass = '';

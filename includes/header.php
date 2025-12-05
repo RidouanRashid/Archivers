@@ -1,5 +1,11 @@
 <?php if (session_status() === PHP_SESSION_NONE) session_start(); ?>
 <?php
+// Header: navigatie, taalkieskeuze (NL/EN), tekst-grootte toggle, logo-swap
+// - Taalkeuze persisted via session van ?lang=nl|en query parameter
+// - Labels array met NL en EN vertalingen voor menu items
+// - Language toggle link: wissel tussen NL/EN
+// - A+ knop: tekst-grootte toggle (localStorage persistent)
+// - Logo swap: groot logo bij top pagina, klein logo bij scroll
 
 if (isset($_GET['lang'])) {
     $lang = strtolower($_GET['lang']) === 'en' ? 'en' : 'nl';
@@ -55,7 +61,10 @@ function withLang(string $lang): string { return currentUrlNoLang() . (strpos(cu
 ?>
 <header class="site-header" aria-label="Hoofdnavigatie">
     <div class="header-inner">
-        <div class="logo"><a href="index.php"><img src="img/HUA-logo.png" alt="HUA Logo" id="huaLogo" data-small="img/HUA-logo.png" data-large="img/HUA-groot.png"></a></div>
+        <div class="logo"><a href="index.php?view=panorama"><img src="img/HUA-logo.png" alt="HUA Logo" id="huaLogo" data-small="img/HUA-logo.png" data-large="img/HUA-groot.png"></a></div>
+        <div class="header-search">
+            <button type="button" aria-label="Zoeken" class="search-btn">🔍</button>
+        </div>
         <nav class="main-nav" aria-label="Hoofdmenu">
             <ul>
                 <li><a href="index.php"><?php echo htmlspecialchars($L['discover']); ?></a></li>
@@ -77,9 +86,6 @@ function withLang(string $lang): string { return currentUrlNoLang() . (strpos(cu
                 </li>
             </ul>
         </nav>
-        <div class="header-search">
-            <button type="button" aria-label="Zoeken" class="search-btn">🔍</button>
-        </div>
     </div>
 </header>
 

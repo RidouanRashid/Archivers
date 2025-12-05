@@ -1,4 +1,9 @@
 <?php
+// Logout: wis sessie en redirect naar login
+// - Clear $_SESSION array (inhoud verwijderen)
+// - Verwijder session cookie als deze bestaat
+// - Destroy server-side session data
+// - Redirect naar inlog.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {

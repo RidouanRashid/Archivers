@@ -1,4 +1,10 @@
 <?php
+// Add hotspot pagina: maak nieuw hotspot aan met beschrijvingen
+// - Vereist admin login (sessie check)
+// - Invoer: naam (verplicht), NL beschrijving, EN beschrijving, optionele X/Y coördinaten
+// - Opslaan naar database als nieuw hotspot
+// - Feedback: succes (met link naar hotspot) of foutmelding
+// - Autosuggest coördinaten: 0,0 als niet ingevoerd
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_user'])) { header('Location: inlog.php'); exit; }
 

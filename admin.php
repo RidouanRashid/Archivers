@@ -1,5 +1,10 @@
 <?php
-// Admin panel (requires login)
+// Admin panel: beheert afbeeldingsvolgorde en hotspots
+// - Vereist inlog via sessie (check redirect naar inlog.php)
+// - Laadt afbeeldingen en hotspots uit database
+// - Biedt drag/drop interface voor afbeeldingsvolgorde
+// - Toont hotspots met edit-mogelijkheden voor naam/beschrijving/coördinaten
+// - Links naar add_image.php en add_hotspot.php voor nieuwe items
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_user'])) {
   header('Location: inlog.php');

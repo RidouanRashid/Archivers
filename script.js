@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+	// Panorama viewer initialisatie: viewport, schaal, pan, zoom
 	const viewport = document.querySelector('.panorama-viewport');
 	const content = document.querySelector('.panorama-viewport .panorama');
 	const hotspotsLayer = content ? content.querySelector('.hotspots-layer') : null;
@@ -8,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (!viewport || !content) return;
 
+	// Zoom schaal: van 1x tot 4x
 	let scale = 1;
 	const minScale = 1;
 	const maxScale = 4;
@@ -127,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	applyTransform();
 
+	// Laad alle hotspots van de API en render deze op het panorama
 	(async function loadHotspots(){
 		if (!hotspotsLayer) return;
 		try {
@@ -293,6 +296,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 (function setupHeaderLogoSwap(){
+	// Wissel logo naar groot/klein versie bij scrollen
+	// - Klein logo bij scroll > 0px
+	// - Groot logo wanneer helemaal boven
+	// - Smooth transition met CSS
 	const logoImg = document.getElementById('huaLogo');
 	if (!logoImg) return;
 	const smallSrc = logoImg.getAttribute('data-small') || logoImg.src;
@@ -311,9 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	update();
 })();
 
-  // Drag and drop ordering UI
+  // Drag and drop volgorde UI: herbeschik afbeeldingen
+  // - Drag afbeelding naar andere plaats
+  // - Volgorde wordt gewijzigd in DOM
+  // - Save knop persisteert volgorde naar database
   const list = document.getElementById('reorderList');
   let dragEl = null;
+  
+  // Dragstart: zet actieve element
   list.addEventListener('dragstart', (e) => {
     if (e.target.classList.contains('reorder-item')) {
       dragEl = e.target;
@@ -321,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   list.addEventListener('dragover', (e) => {
+    // Dragover: herbeschik items op basis van muis positie
     e.preventDefault();
     const after = Array.from(list.children).find(ch => {
       const box = ch.getBoundingClientRect();
@@ -330,6 +343,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   list.addEventListener('dragend', () => { dragEl = null; });
 
+  // Sla de volgorde van afbeeldingen op in de database
+  // - Haalt huidige volgorde van list items
+  // - Stuurt array van { img, position } naar API
+  // - Na succes: reload pagina om nieuwe volgorde te zien
   document.getElementById('saveOrder').addEventListener('click', async () => {
     const payload = Array.from(list.children).map((el, i) => ({ img: el.dataset.img, position: i+1 }));
     const res = await fetch('admin_api.php?action=save_order', {
@@ -341,6 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'index.php';
     }
   });
+  
+  // Verplaats item in lijst naar links of rechts
   function moveItem(buttonEl, dir) {
     if (!buttonEl) return;
     const item = buttonEl.closest('.reorder-item');
@@ -355,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Voeg click handlers toe aan pijlknoppen
   list.querySelectorAll('.arrow-left').forEach(btn => {
     btn.addEventListener('click', () => moveItem(btn, 'left'));
   });
@@ -362,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => moveItem(btn, 'right'));
   });
 
+  // Functie om huidige volgorde automatisch op te slaan
   async function saveCurrentOrder() {
     const payload = Array.from(list.children).map((el, i) => ({ img: el.dataset.img, position: i+1 }));
     const res = await fetch('admin_api.php?action=save_order', {
@@ -375,10 +396,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Ga naar panorama in admin-modus voor hotspot verplaatsen
   document.getElementById('toggleDrag').addEventListener('click', () => {
     window.location.href = 'index.php?admin=1';
   });
 
+  // Sla hotspot beschrijving en coördinaten op in de database
   document.querySelectorAll('.saveHotspot').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = parseInt(btn.dataset.id, 10);
@@ -401,6 +424,8 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(out.status === 'ok' ? 'Hotspot opgeslagen' : 'Opslaan mislukt');
     });
   });
+	
+  // Handler voor afbeeldingen verwijderen uit de reorder list
 	list.addEventListener('click', async (e) => {
 		const btn = e.target.closest('.delete-image');
 		if (btn) {
@@ -415,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 
+	// Knoppen voor hotspot verwijderen
 	document.querySelectorAll('.deleteHotspot').forEach(btn => {
 		btn.addEventListener('click', async () => {
 			const id = parseInt(btn.dataset.id, 10);

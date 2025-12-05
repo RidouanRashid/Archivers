@@ -1,4 +1,10 @@
 <?php
+// Login pagina: authenticeer admin gebruiker
+// - Check of al ingelogd: redirect naar admin.php
+// - POST: username + password controle tegen database admin_users tabel
+// - password_verify() controleert hashed wachtwoord
+// - Succes: zet $_SESSION['admin_user'] en redirect naar admin.php
+// - Fout: toon 'Onjuiste gegevens' melding
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (!empty($_SESSION['admin_user'])) {
     header('Location: admin.php');

@@ -1,3 +1,13 @@
+/* 
+  Stylesheetbestand voor Het Utrechts Archief panorama website
+  - Header styling met sticky navigation en logo swap
+  - Panorama viewport met zoom/pan en minimap
+  - Hotspots met popups
+  - Admin panel styling
+  - Responsive design
+  - Kleurenschema: antieke bruine/beige tonen
+*/
+
 /* Header enhancements */
 .site-header {
   position: sticky;
@@ -87,7 +97,6 @@
   cursor: pointer;
 }
 
-/* Admin forms: unify card input look (borders + warm background) */
 .admin-card label {
   display: block;
   margin-bottom: 6px;
@@ -146,6 +155,7 @@ main .panorama {
   transform-origin: 0 0;
 }
 
+/* Panorama inhoud: relatieve positie voor flexbox layout */
 main .panorama {
   position: relative;
   height: auto;
@@ -162,7 +172,7 @@ main .panorama {
   pointer-events: auto;
 }
 
-/* Hotspots styling */
+/* Hotspot styling: rode ronde knoppen op panorama */
 .hotspots-layer {
   position: absolute;
   top: 0;
@@ -193,7 +203,7 @@ main .panorama {
   background: #a30000;
 }
 
-/* Hotspot popup */
+/* Hotspot popup: tooltips boven hotspot knoppen */
 .hotspot .popup {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -251,7 +261,7 @@ main .panorama {
   color: #666;
 }
 
-/* Admin styles */
+/* Admin styles: toolbar en admin panel styling */
 .admin-toolbar {
   position: sticky;
   top: 0;
@@ -281,6 +291,7 @@ main .panorama {
   opacity: 0.85;
 }
 
+/* Reorder list: drag/drop interface voor afbeeldingsvolgorde */
 .reorder-list {
   display: flex;
   gap: 6px;
@@ -298,7 +309,7 @@ main .panorama {
   cursor: grab;
 }
 
-/* Clean overlap algorithm */
+/* Overlappingsalgoritme: panorama afbeeldingen met overlap */
 .panorama {
   --overlap: 42px;
 }
@@ -328,7 +339,7 @@ main .panorama {
   background: linear-gradient(to right, rgba(17, 17, 17, 0) 0%, rgba(17, 17, 17, 0.6) 70%, rgba(17, 17, 17, 1) 100%);
 }
 
-/* Minimap styles */
+/* Minimap: kleine preview van panorama onder viewport */
 .minimap {
   width: 100%;
   background: #000;
@@ -352,10 +363,10 @@ main .panorama {
   cursor: pointer;
 }
 
-/* Responsive: scale minimap thumbnails for larger displays (iPad, digibord) */
-/* Minimap height is computed in JS to fit all images within page width */
+/* Responsive: minimap thumbnails schalen voor grotere schermen (iPad, digibord) */
+/* Minimap hoogte wordt in JS berekend om alle afbeeldingen op pagina breedte te passen */
 
-/* Header */
+/* Header styling (antieke bruine thema) */
 .site-header {
   background: #ffffff;
   border-bottom: 4px solid #ddd;
@@ -416,6 +427,7 @@ main .panorama {
   background: #0b5a53;
 }
 
+/* Pagina titel styling */
 .page-title {
   max-width: 1400px;
   margin: 24px auto 12px;
@@ -515,6 +527,7 @@ main .panorama {
   color: #444;
 }
 
+/* Chat knop: vast in hoek van pagina */
 .chat-button {
   position: fixed;
   right: 24px;

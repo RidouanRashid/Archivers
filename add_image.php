@@ -1,4 +1,10 @@
 <?php
+// Add image pagina: upload of voeg afbeelding toe via URL/pad
+// - Vereist admin login (sessie check redirect naar inlog.php)
+// - Optie 1: upload lokaal bestand (jpg, png, webp) - gekopieerd naar img/ map
+// - Optie 2: voeg toe via URL of pad naar bestand
+// - Optioneel: stel positie in (anders automatisch aan eind volgorde)
+// - Feedback: succesmelding of foutmelding toont op pagina
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_user'])) {
     header('Location: inlog.php');

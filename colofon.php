@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!-- Colofon pagina: credits en attributie
+  - Toont samenstellers, redacteurs, fotografen, illustratoren
+  - Tabel-achtige layout: functie links, naam(en) rechts
+  - Afbeelding links als visueel element
+-->
 <html lang="nl">
 <head>
     <meta charset="UTF-8" />
@@ -8,8 +13,6 @@
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
-    <h1 class="page-title">Colofon</h1>
-
     <main>
         <section class="colofon">
             <div class="colofon-image">

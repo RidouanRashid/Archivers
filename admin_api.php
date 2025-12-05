@@ -1,4 +1,6 @@
 <?php
+// Admin API: JSON endpoints voor panorama afbeeldingen en hotspot beheer
+// Acties: save_order, save_hotspot, create_hotspot, add_image, delete_image, delete_hotspot
 header('Content-Type: application/json');
 $host = '127.0.0.1';
 $user = 'root';
@@ -9,6 +11,9 @@ if ($conn->connect_error) { http_response_code(500); echo json_encode(['error'=>
 
 $action = $_GET['action'] ?? '';
 
+// Sla de volgorde van panorama afbeeldingen op in de database
+// Body: array van { img: string (pad/URL), position: number (1, 2, 3...) }
+// Gebruikt transactie voor atomaire update van alle posities
 if ($action === 'save_order') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $conn->begin_transaction();
@@ -32,6 +37,9 @@ if ($action === 'save_order') {
   exit;
 }
 
+// Werk hotspot gegevens bij (naam, beschrijving, coördinaten)
+// Body: { id: number (verplicht), naam?: string, beschrijving?: string, x_coord?: float, y_coord?: float }
+// Ondersteunt partiële updates - alleen opgegeven velden worden bijgewerkt
 if ($action === 'save_hotspot') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $id = (int)($payload['id'] ?? 0);
@@ -79,6 +87,9 @@ if ($action === 'save_hotspot') {
   exit;
 }
 
+// Maak een nieuwe hotspot aan met Nederlandse en Engelse beschrijving
+// Body: { naam: string (verplicht), beschrijving: string, beschrijving_english: string, x_coord?: float, y_coord?: float }
+// Retourneert nieuwe hotspot ID als beschrijving correct wordt opgeslagen
 if ($action === 'create_hotspot') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $naam = trim($payload['naam'] ?? '');
@@ -96,6 +107,9 @@ if ($action === 'create_hotspot') {
   exit;
 }
 
+// Voeg een afbeelding toe aan de panorama volgorde
+// Body: { img: string (pad/URL, verplicht), position?: number (optioneel, automatisch berekend als niet gegeven) }
+// Als afbeelding al bestaat: update alleen de positie (DUPLICATE KEY)
 if ($action === 'add_image') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $img = trim($payload['img'] ?? '');
@@ -114,6 +128,7 @@ if ($action === 'add_image') {
   exit;
 }
 
+// Verwijder een afbeelding uit de panorama volgorde
 if ($action === 'delete_image') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $img = trim($payload['img'] ?? '');
@@ -126,6 +141,9 @@ if ($action === 'delete_image') {
   exit;
 }
 
+// Verwijder een hotspot volledig uit de database
+// Body: { id: number (hotspot ID te verwijderen) }
+// Verwijdert alle gegevens: naam, beschrijvingen, coördinaten, alles
 if ($action === 'delete_hotspot') {
   $payload = json_decode(file_get_contents('php://input'), true) ?? [];
   $id = (int)($payload['id'] ?? 0);

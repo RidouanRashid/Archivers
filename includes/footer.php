@@ -1,5 +1,12 @@
 <?php if (session_status() === PHP_SESSION_NONE) session_start(); ?>
 <?php
+// Footer: multi-kolom layout, contact info, nieuwsbrief, taalafhankelijke labels
+// - Haalt taal uit sessie (standaard NL)
+// - $L array bevat NL en EN labels voor alle footer onderdelen
+// - Kolommen: Plan bezoek, Onderzoek, Over ons, Contact, Nieuwsbrief
+// - Contact info: telefoon, email, adres, chat, social media links
+// - Nieuwsbrief: email signup formulier
+// - Footer bottom: copyright en bedrijfsgegevens (IBAN, KvK, BTW)
 $lang = $_SESSION['lang'] ?? 'nl';
 $L = [
   'nl' => [
